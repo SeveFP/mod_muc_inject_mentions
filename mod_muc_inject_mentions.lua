@@ -1,6 +1,6 @@
 module:depends("muc");
 
-local jid_split = require "util.jid".split;
+local jid_resource = require "util.jid".resource;
 
 local prefixes = module:get_option("muc_inject_mentions_prefixes", nil)
 local suffixes = module:get_option("muc_inject_mentions_suffixes", nil)
@@ -43,16 +43,18 @@ local function has_nick_prefix(body, first)
     -- There are no configured prefixes
     if not prefixes or #prefixes < 1 then return false end
 
-    -- Preffix must have a space before it
-    -- or be the first character of the body
+    -- Preffix must have a space before it,
+    -- be the first character of the body
+    -- or be the first character after a new line
     if body:sub(first - 2, first - 2) ~= "" and
-        body:sub(first - 2, first - 2) ~= " "
+        body:sub(first - 2, first - 2) ~= " " and
+        body:sub(first - 2, first - 2) ~= "\n"
     then
         return false
     end
 
     local preffix = body:sub(first - 1, first - 1)
-    for i, _preffix in ipairs(prefixes) do
+    for _, _preffix in ipairs(prefixes) do
         if preffix == _preffix then
             return true
         end
@@ -69,16 +71,18 @@ local function has_nick_suffix(body, last)
     -- There are no configured suffixes
     if not suffixes or #suffixes < 1 then return false end
 
-    -- Suffix must have a space after it
-    -- or be the last character of the body
+    -- Suffix must have a space after it,
+    -- be the last character of the body
+    -- or be the last character before a new line
     if body:sub(last + 2, last + 2) ~= "" and
-        body:sub(last + 2, last + 2) ~= " "
+        body:sub(last + 2, last + 2) ~= " " and
+        body:sub(last + 2, last + 2) ~= "\n"
     then
         return false
     end
 
     local suffix = body:sub(last+1, last+1)
-    for i, _suffix in ipairs(suffixes) do
+    for _, _suffix in ipairs(suffixes) do
         if suffix == _suffix then
             return true
         end
@@ -92,11 +96,12 @@ local function search_mentions(room, stanza)
     local mentions = {}
 
     for _, occupant in pairs(room._occupants) do
-        local node, host, nick = jid_split(occupant.nick);
+        local nick = jid_resource(occupant.nick);
         -- Check for multiple mentions to the same nickname in a message
         -- Hey @nick remember to... Ah, also @nick please let me know if...
         local matches = {}
-        local _first, _last = 0, 0
+        local _first
+        local _last = 0
         while true do
             -- Use plain search as nick could contain
             -- characters used in Lua patterns
@@ -114,9 +119,9 @@ local function search_mentions(room, stanza)
             if first == 1 and last == #body then
                 table.insert(mentions, {bare_jid=bare_jid, first=first, last=last})
 
-            -- Nickname between spaces
-            elseif body:sub(first - 1, first - 1) == " " and
-                body:sub(last + 1, last + 1) == " "
+            -- Nickname between spaces or new lines
+            elseif body:sub(first - 1, first - 1) == " " or body:sub(first - 1, first - 1) == "\n" and
+                body:sub(last + 1, last + 1) == " " or body:sub(last + 1, last + 1) == "\n"
             then
                 table.insert(mentions, {bare_jid=bare_jid, first=first, last=last})
             else
@@ -130,13 +135,17 @@ local function search_mentions(room, stanza)
 
                 -- @nickname ...
                 elseif has_preffix and not has_suffix then
-                    if body:sub(last + 1, last + 1) == " " then
+                    if body:sub(last + 1, last + 1) == " " or
+                        body:sub(last + 1, last + 1) == "\n"
+                    then
                         table.insert(mentions, {bare_jid=bare_jid, first=first, last=last})
                     end
 
                 -- nickname: ...
                 elseif not has_preffix and has_suffix then
-                    if body:sub(first - 1, first - 1) == " " then
+                    if body:sub(first - 1, first - 1) == " " or
+                        body:sub(first - 1, first - 1) == "\n"
+                    then
                         table.insert(mentions, {bare_jid=bare_jid, first=first, last=last})
                     end
                 end
