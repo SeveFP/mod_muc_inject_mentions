@@ -49,7 +49,7 @@ Only one of the following settings must be set.
 -- muc_inject_mentions_disabled_rooms = {"room@conferences.server.com"}
 ```
 
-If none or both are found, all rooms in the muc component will have mentions enabled.
+If none of these is set, all rooms in the muc component will have mentions enabled.
 
 
 By default, if a message contains at least one mention,

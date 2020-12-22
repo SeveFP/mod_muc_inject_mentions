@@ -115,11 +115,9 @@ local function get_client_mentions(stanza)
 end
 
 local function is_room_eligible(jid)
-    if not enabled_rooms and not disabled_rooms then
-        return true;
-    end
+    if not enabled_rooms and not disabled_rooms then return true; end
 
-    if enabled_rooms and not disabled_rooms then
+    if enabled_rooms then
         for _, _jid in ipairs(enabled_rooms) do
             if _jid == jid then
                 return true
@@ -128,7 +126,7 @@ local function is_room_eligible(jid)
         return false
     end
 
-    if disabled_rooms and not enabled_rooms then
+    if disabled_rooms then
         for _, _jid in ipairs(disabled_rooms) do
             if _jid == jid then
                 return false
@@ -136,8 +134,6 @@ local function is_room_eligible(jid)
         end
         return true
     end
-
-    return true
 end
 
 local function has_nick_prefix(body, first)
