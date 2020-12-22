@@ -251,7 +251,7 @@ local function muc_inject_mentions(event)
             "reference", {
                 xmlns=reference_xmlns,
                 begin=tostring(mention.first - 1), -- count starts at 0
-                ["end"]=tostring(mention.last - 1),
+                ["end"]=tostring(mention.last),
                 type="mention",
                 uri="xmpp:" .. mention.bare_jid,
             }
